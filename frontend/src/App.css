@@ -1,42 +1,116 @@
-#root {
-  max-width: 1280px;
+/* Styles généraux */
+.container {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Styles pour les en-têtes */
+header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 1rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Styles pour les formulaires */
+.form-label {
+  font-weight: 500;
 }
 
 .card {
-  padding: 2em;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+  transition: all 0.3s ease;
 }
 
-.read-the-docs {
-  color: #888;
+.card:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  font-weight: 600;
+}
+
+/* Styles pour les tableaux */
+.table {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.table thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-header:hover {
+  background-color: #e9ecef;
+}
+
+.actions-column {
+  width: 200px;
+  text-align: center;
+}
+
+/* Styles pour la pagination */
+.pagination {
+  margin-top: 1.5rem;
+}
+
+.page-link {
+  color: #0d6efd;
+}
+
+.page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+/* Styles pour les modales */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Styles pour les notifications */
+.toast-container {
+  z-index: 1050;
+}
+
+.toast {
+  min-width: 250px;
+}
+
+/* Styles pour les boutons */
+.btn {
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+/* Styles pour les états de chargement */
+.spinner-border {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Styles pour les écrans mobiles */
+@media (max-width: 768px) {
+  .actions-column {
+    width: auto;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
 }

@@ -1,86 +1,177 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import UserForm from "./components/UserForm";
 import UserList from "./components/UserList";
-
-const API = import.meta.env.VITE_API_URL;
+import ToastContainer from "./components/ToastContainer";
+import { userService } from "./services/api";
+import useToast from "./hooks/useToast";
+import "./App.css";
 
 function App() {
+  // États
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Hook personnalisé pour les notifications
+  const { toasts, showSuccess, showError, removeToast } = useToast();
 
-  const fetchUsers = async () => {
-    const res = await axios.get(`${API}/users`);
-    setUsers(res.data);
-  }
+  // Charger les utilisateurs
+  const fetchUsers = async (page = 1, limit = 10, search = "") => {
+    setLoading(true);
+    try {
+      const data = await userService.getUsers({ page, limit, search });
+      setUsers(data.users);
+      setPagination({
+        page: data.pagination.page,
+        limit: data.pagination.limit,
+        total: data.pagination.total,
+        totalPages: data.pagination.totalPages
+      });
+    } catch (error) {
+      showError("Erreur lors du chargement des utilisateurs");
+      console.error("Erreur lors du chargement des utilisateurs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Charger les utilisateurs au chargement initial
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(pagination.page, pagination.limit, searchTerm);
   }, []);
 
-  const handleAdd = async (user) => {
-    await axios.post(`${API}/users`, user);
-    fetchUsers();
-  }
-  const handleEdit = async (user) => {
-    setEditingUser(user);
-  }
-  const handleUpdate = async (user) => {
-    await axios.put(`${API}/users/${user.id}`, user);
-    setEditingUser(null);
-    fetchUsers();
-  }
+  // Gérer le changement de page
+  const handlePageChange = (newPage) => {
+    fetchUsers(newPage, pagination.limit, searchTerm);
+  };
+
+  // Gérer le changement de limite par page
+  const handleLimitChange = (newLimit) => {
+    fetchUsers(1, newLimit, searchTerm);
+  };
+
+  // Gérer la recherche
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    fetchUsers(1, pagination.limit, term);
+  };
+
+  // Ajouter un utilisateur
+  const handleAdd = async (userData) => {
+    try {
+      await userService.createUser(userData);
+      showSuccess("Utilisateur ajouté avec succès");
+      fetchUsers(pagination.page, pagination.limit, searchTerm);
+      return true;
+    } catch (error) {
+      showError(
+        error.response?.data?.error || 
+        "Erreur lors de l'ajout de l'utilisateur"
+      );
+      console.error("Erreur lors de l'ajout de l'utilisateur:", error);
+      throw error;
+    }
+  };
+
+  // Mettre à jour un utilisateur
+  const handleUpdate = async (userData) => {
+    try {
+      await userService.updateUser(userData.id, userData);
+      showSuccess("Utilisateur mis à jour avec succès");
+      setEditingUser(null);
+      fetchUsers(pagination.page, pagination.limit, searchTerm);
+      return true;
+    } catch (error) {
+      showError(
+        error.response?.data?.error || 
+        "Erreur lors de la mise à jour de l'utilisateur"
+      );
+      console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
+      throw error;
+    }
+  };
+
+  // Supprimer un utilisateur
   const handleDelete = async (id) => {
-    await axios.delete(`${API}/users/${id}`);
-    fetchUsers();
-  }
-  const handleCancelEdit = () => {
-    setEditingUser(null);
-  }
-  const handleSave = async (user) => {
-    if (editingUser) {
-      await handleUpdate(user);
-    } else {
-      await handleAdd(user);
+    try {
+      await userService.deleteUser(id);
+      showSuccess("Utilisateur supprimé avec succès");
+      
+      // Si c'était le dernier utilisateur de la page, revenir à la page précédente
+      if (users.length === 1 && pagination.page > 1) {
+        fetchUsers(pagination.page - 1, pagination.limit, searchTerm);
+      } else {
+        fetchUsers(pagination.page, pagination.limit, searchTerm);
+      }
+    } catch (error) {
+      showError(
+        error.response?.data?.error || 
+        "Erreur lors de la suppression de l'utilisateur"
+      );
+      console.error("Erreur lors de la suppression de l'utilisateur:", error);
     }
-  }
-  const handleFormSubmit = async (user) => {
+  };
+
+  // Gérer la soumission du formulaire
+  const handleFormSubmit = async (userData) => {
     if (editingUser) {
-      await handleUpdate(user);
+      return handleUpdate(userData);
     } else {
-      await handleAdd(user);
+      return handleAdd(userData);
     }
-  }
+  };
+
+  // Annuler l'édition
   const handleFormCancel = () => {
     setEditingUser(null);
-  }
-  const handleFormDelete = async (id) => {
-    await handleDelete(id);
-  }
-  const handleFormEdit = (user) => {
+  };
+
+  // Commencer l'édition d'un utilisateur
+  const handleEdit = (user) => {
     setEditingUser(user);
-  }
-  const handleFormUpdate = async (user) => {
-    await handleUpdate(user);
-  }
-  const handleFormClose = () => {
-    setEditingUser(null);
-  }
+  };
 
   return (
-    <div className="App">
-      <h1>User Management</h1>
-      <UserForm
-        onSubmit={handleFormSubmit}
-        onCancel={handleFormCancel}
-        user={editingUser}
-        onSave={handleSave}
-      />
-      <UserList
-        users={users}
-        onEdit={handleFormEdit}
-        onDelete={handleFormDelete}
-      />
+    <div className="container py-4">
+      <header className="mb-4 text-center">
+        <h1 className="display-4">Gestion des Utilisateurs</h1>
+        <p className="lead">
+          Créez, consultez, modifiez et supprimez des utilisateurs
+        </p>
+      </header>
+
+      <div className="row">
+        <div className="col-lg-4 mb-4">
+          <UserForm
+            user={editingUser}
+            onSave={handleFormSubmit}
+            onCancel={handleFormCancel}
+          />
+        </div>
+        
+        <div className="col-lg-8">
+          <UserList
+            users={users}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onSearch={handleSearch}
+            onLimitChange={handleLimitChange}
+            loading={loading}
+          />
+        </div>
+      </div>
+
+      {/* Affichage des notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }
